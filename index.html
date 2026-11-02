@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title> Simulation: oscilloscope cathodique et GBF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>TP - Circuits électriques <small>Oscilloscope cathodique · GBF · circuits RC et RLC</small></h1>
+</header>
+
+<main id="lab">
+<section class="dash">
+  <div class="dcard">
+    <h2>Fiche TP</h2>
+    <p class="obj" id="obj">Choisis un montage dans la liste « Montages » (sous la plaquette) ou câble le tien.</p>
+    <ol class="steps" id="steps"><li data-s="wire">Circuit câblé</li><li data-s="sig">Signal visible</li><li data-s="per">2 à 6 périodes affichées</li><li data-s="goal">Fréquence caractéristique trouvée</li></ol>
+    <p class="tip" id="tip"></p>
+    <label class="corr"><input type="checkbox" id="aid"> Aide : indiquer le sens de réglage de f</label>
+  </div>
+  <div class="dcard prof">
+    <h2>Valeurs</h2>
+    <label class="corr"><input type="checkbox" id="corr"> Afficher les valeurs </label>
+    <label class="corr" id="phiw" hidden>Convention du déphasage :
+      <select id="phimode"><option value="out">φ = φ(CH2) − φ(CH1)  (RC : sortie / entrée)</option><option value="ui">φ = φ(CH1) − φ(CH2)  (RLC : u / i, CH2 sur R)</option></select></label>
+    <div id="theory" hidden></div>
+    <div class="btns" id="profbtn" hidden><button id="goto">→ Aller à fc</button><button id="gotol">→ Aller à f limite</button><button id="sweep">▶ Balayage en fréquence</button></div>
+  </div>
+</section>
+<div class="instruments">
+
+  <!-- ================= OSCILLOSCOPE ================= -->
+  <section id="scope" class="chassis scopeC">
+    <div class="brandbar"><span class="brand">OSCILLOSCOPE CATHODIQUE</span><span class="model">20 MHz · double trace</span><span class="led" title="Sous tension"></span></div>
+    <div class="scopebody">
+      <div class="screenbox">
+        <div class="crt"><canvas id="screen"></canvas><div class="glass"></div></div>
+        <p class="note">1 carreau = 1 division = 1 cm · 1 petite graduation = 0,2 div. Lecture : divisions × sensibilité (V/div ou mV/div) ou × balayage (ms/div).</p>
+      </div>
+      <div class="cols">
+        <div class="col g1">
+          <h3>Voie 1 · CH1</h3>
+          <div class="knob" data-k="v1" data-t="VOLTS/DIV (m = mV)"></div>
+          <div class="knob" data-k="p1" data-t="POSITION ↕"></div>
+          <button class="gnd" id="gnd1" title="Entrée reliée à la masse : on voit la référence">GND</button>
+        </div>
+        <div class="col g2">
+          <h3>Voie 2 · CH2</h3>
+          <div class="knob" data-k="v2" data-t="VOLTS/DIV (m = mV)"></div>
+          <div class="knob" data-k="p2" data-t="POSITION ↕"></div>
+          <button class="gnd" id="gnd2">GND</button>
+        </div>
+        <div class="col tm">
+          <h3>Horizontal</h3>
+          <div class="btns" id="modes"><button data-m="ch1">CH1</button><button data-m="ch2">CH2</button><button data-m="dual" class="on">DUAL</button></div>
+          <button class="gnd" id="xybtn" title="Choisir CH2 puis appuyer sur X-Y">X-Y</button>
+          <p class="mini" id="xyhint"></p>
+          <div class="knob big" data-k="t" data-t="TEMPS/DIV"></div>
+          <div class="knob" data-k="ph" data-t="POSITION ↔"></div>
+        </div>
+      </div>
+    </div>
+    <div class="jackrow">
+      <div class="jg">
+        <div class="term" data-t="ch1" style="--c:#e8b900"><span>CH1</span><div class="jack"><i></i></div></div>
+        <div class="term" data-t="ch1g" style="--c:#111"><span>CH1 G</span><div class="jack"><i></i></div></div>
+      </div>
+      <div class="jg">
+        <div class="term" data-t="ch2" style="--c:#4cc3ff"><span>CH2</span><div class="jack"><i></i></div></div>
+        <div class="term" data-t="ch2g" style="--c:#111"><span>CH2 G</span><div class="jack"><i></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GBF ================= -->
+  <section id="gbfbox" class="chassis gbfC">
+    <div class="brandbar"><span class="brand">GBF</span><span class="model">générateur basses fréquences</span><span class="led"></span></div>
+    <div class="gbf">
+      <div class="lcd"><span id="lcd">1 kHz</span><small id="lcdA">4 V</small></div>
+      <div class="btns" id="waves"><button data-w="sin" class="on">∿ Sinus</button><button data-w="sq">⎍ Carré</button><button data-w="tri">△ Triangle</button></div>
+      <div class="lab">Gamme de fréquence</div>
+      <div class="btns" id="ranges"></div>
+      <div class="knob big" data-k="fm" data-t="FRÉQUENCE (× gamme)"></div>
+      <div class="knob" data-k="am" data-t="AMPLITUDE Um"></div>
+      <div class="lab pro-only">Saisie directe (prof)</div>
+      <div class="inline pro-only"><input id="gf" type="number" min="0.02" step="any"><select id="gfu"><option value="1">Hz</option><option value="1000">kHz</option><option value="1000000">MHz</option></select></div>
+      <div class="inline pro-only"><input id="ga" type="number" min="0" max="10" step="any"><span class="u">V crête</span></div>
+    </div>
+    <div class="jackrow">
+      <div class="jg">
+        <div class="term" data-t="gbfp" style="--c:#d62020"><span>SORTIE +</span><div class="jack"><i></i></div></div>
+        <div class="term" data-t="gbfm" style="--c:#111"><span>SORTIE −</span><div class="jack"><i></i></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= PLAQUETTE ================= -->
+<section id="bench">
+  <aside class="side">
+    <h2>Composants</h2>
+    <p class="hint">Glisser vers la plaquette. <b>R</b> pendant le glissement = pivoter.</p>
+    <div class="pal cmp R" data-t="R"><span>R</span></div>
+    <div class="pal cmp L" data-t="L"><span>L</span></div>
+    <div class="pal cmp C" data-t="C"><span>C</span></div>
+    <div class="pal cmp W" data-t="W"><span>Fil</span></div>
+
+    <h2>Valeur</h2>
+    <p class="hint" id="inspHint">Cliquez un composant de la plaquette pour modifier sa valeur.</p>
+    <div id="inspf" hidden>
+      <b id="ilab"></b>
+      <div class="inline"><input id="ival" type="number" step="any" min="0"><select id="iunit"></select></div>
+      <div class="inline"><button id="irot">⟳ Pivoter</button><button id="idel">Supprimer</button></div>
+    </div>
+
+    <h2>Montages</h2>
+    <div class="inline col">
+      <button class="ex" data-e="1">RC passe-bas (sortie sur C)</button>
+      <button class="ex" data-e="2">CR passe-haut (sortie sur R)</button>
+      <button class="ex" data-e="3">RLC série (sortie sur R)</button>
+      <button class="ex" data-e="0">Tout effacer</button>
+    </div>
+  </aside>
+
+  <div class="boardarea">
+    
+    <div class="board"><div id="gridwrap"><div id="grid"></div><div id="parts"></div></div></div>
+    <p class="legend"><b>Plaquette</b> : chaque carré de 9 trous = un seul nœud électrique. Fils : <i style="background:#d62020"></i>GBF + (entrée) <i style="background:#e8b900"></i>CH1 <i style="background:#4cc3ff"></i>CH2 <i style="background:#2a2a2a"></i>masses</p>
+    <p class="status" id="status"></p>
+    <p class="mini">Câblage : glisser depuis une borne de l'oscilloscope ou du GBF jusqu'à un carré de la plaquette (ou clic sur la borne, puis clic sur le carré). Double-clic sur la borne ou sur le fil pour l'enlever. Les bornes G et SORTIE − sont reliées à la masse commune.</p>
+  </div>
+</section>
+
+<svg id="wires"></svg>
+</main>
+<div id="goal" class="goal"></div>
+<script src="script.js"></script>
+</body>
+</html>
